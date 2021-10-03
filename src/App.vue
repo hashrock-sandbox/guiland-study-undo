@@ -1,6 +1,11 @@
 <template>
   <myCanvas @edit="onEdit" :items="items" />
-  <textarea :style="textareaStyle" v-model="editingText" @blur="onBlur" ref="editingText" />
+  <textarea
+    :style="textareaStyle"
+    v-model="editingText"
+    @blur="onBlur"
+    ref="editingText"
+  />
 </template>
 
 <script lang="ts">
@@ -14,6 +19,14 @@ const fancyColors = [
   "#F9A8D4",
   "#FCA5A5",
 ];
+
+interface TextareaStyle {
+  width: string;
+  height: string;
+  top: string;
+  left: string;
+  display: string;
+}
 import Canvas from "./components/Canvas.vue";
 export default {
   name: "App",
@@ -54,16 +67,22 @@ export default {
         y: 0,
       } as Point,
       editingItem: null as CardItem | null,
+      snapshots: [] as CardItem[][],
+      redoSnapshots: [] as CardItem[][],
     };
   },
   components: {
     myCanvas: Canvas,
   },
   computed: {
-    textareaStyle() {
-      if(this.editingItem == null){
+    textareaStyle(): TextareaStyle {
+      if (this.editingItem == null) {
         return {
           display: "none",
+          left: "0px",
+          top: "0px",
+          width: "0px",
+          height: "0px",
         };
       }
       return {
@@ -71,6 +90,7 @@ export default {
         top: `${this.textareaPosition.y}px`,
         width: `${this.editingItem.width}px`,
         height: `${this.editingItem.height}px`,
+        display: "block",
       };
     },
   },
@@ -82,18 +102,63 @@ export default {
       };
       this.editingItem = target;
       this.editingText = target.text;
-      this.$nextTick(()=>{
+      this.$nextTick(() => {
         (this.$refs.editingText as HTMLTextAreaElement).focus();
-      })
+      });
     },
     onBlur() {
       if (this.editingItem == null) {
         return;
       }
+      this.snapshots.push(JSON.parse(JSON.stringify(this.items)));
       this.editingItem.text = this.editingText;
       this.editingItem = null;
     },
-  }
+    onUndo() {
+      if (this.snapshots.length === 0) {
+        console.log("no more undo");
+        return;
+      }
+      this.redoSnapshots.push(JSON.parse(JSON.stringify(this.items)));
+      const snapshot = this.snapshots.pop();
+      if (snapshot) {
+        this.items = snapshot;
+      }
+    },
+    onRedo() {
+      if (this.redoSnapshots.length === 0) {
+        console.log("no more redo");
+        return;
+      }
+      this.snapshots.push(JSON.parse(JSON.stringify(this.items)));
+      const snapshot = this.redoSnapshots.pop();
+      if (snapshot) {
+        this.items = snapshot;
+      }
+    },
+    onKeydown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        this.onBlur();
+      }
+      //undo
+      if (e.keyCode == 90 && e.ctrlKey && !e.shiftKey) {
+        this.onUndo();
+      }
+      //redo
+      if (
+        (e.keyCode == 89 && e.ctrlKey) ||
+        (e.keyCode == 90 && e.ctrlKey && e.shiftKey)
+      ) {
+        this.onRedo();
+      }
+    },
+  },
+  mounted() {
+    document.addEventListener("keydown", this.onKeydown);
+  },
+  unmounted() {
+    document.removeEventListener("keydown", this.onKeydown);
+  },
 };
 </script>
 
@@ -108,11 +173,11 @@ body {
   margin: 0;
   height: 100%;
 }
-textarea{
+textarea {
   position: absolute;
   border: none;
   resize: none;
   font-size: 1.5rem;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255, 255, 255, 0.8);
 }
 </style>
