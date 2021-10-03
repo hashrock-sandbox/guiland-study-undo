@@ -1,6 +1,6 @@
 <template>
   <g :style="{'transform' : transform}">
-    <rect class="card" x="0" y="0" :width="item.width" :height="item.height" fill="white" filter="url(#dropshadow)" />
+    <rect class="card" x="0" y="0" :width="item.width" :height="item.height" :fill="item.color" filter="url(#dropshadow)" />
     <text
       :x="item.width / 2"
       :y="item.height / 2"
@@ -35,4 +35,11 @@ export default {
 </script>
 
 <style>
+.card{
+  cursor: grab;
+}
+.card:active{
+  cursor: grabbing;
+}
+
 </style>
