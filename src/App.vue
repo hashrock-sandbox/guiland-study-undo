@@ -1,6 +1,7 @@
 <template>
-  <myCanvas @edit="onEdit" :items="items" />
+  <myCanvas @edit="onEdit" @change="takeSnapshot" :items="items" />
   <textarea
+    @keydown.stop
     :style="textareaStyle"
     v-model="editingText"
     @blur="onBlur"
@@ -110,6 +111,7 @@ export default {
       if (this.editingItem == null) {
         return;
       }
+      this.redoSnapshots = [];
       this.snapshots.push(JSON.parse(JSON.stringify(this.items)));
       this.editingItem.text = this.editingText;
       this.editingItem = null;
@@ -151,6 +153,10 @@ export default {
       ) {
         this.onRedo();
       }
+    },
+    takeSnapshot(snapshot: CardItem[]) {
+      this.redoSnapshots = [];
+      this.snapshots.push(JSON.parse(JSON.stringify(snapshot)));
     },
   },
   mounted() {

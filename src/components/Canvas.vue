@@ -32,6 +32,7 @@
 </template>
 
 <script lang="ts">
+import { PropType } from '@vue/runtime-core';
 import { Point, CardItem } from "../type";
 import Card from "./Card.vue";
 
@@ -50,8 +51,8 @@ export default {
   name: "Canvas",
   props: {
     items: {
-      type: Array,
-      default: () => [],
+      type: Array as PropType<CardItem[]>,
+      required: true
     },
   },
   data() {
@@ -59,9 +60,9 @@ export default {
       width: 500,
       height: 500,
       offset: null as Point | null,
-
       currentItem: null as CardItem | null,
       count: 0,
+      snapshot: [] as CardItem[]
     };
   },
   components: {
@@ -69,6 +70,7 @@ export default {
   },
   methods: {
     onPointerDown(ev: PointerEvent, item: CardItem) {
+      this.snapshot = JSON.parse(JSON.stringify(this.items))
       const target = ev.target as SVGGraphicsElement;
       target.setPointerCapture(ev.pointerId);
       this.offset = screenToSvg(
@@ -90,6 +92,9 @@ export default {
       }
     },
     onPointerUp(ev: PointerEvent) {
+      if(this.currentItem){
+        this.$emit("change", this.snapshot);
+      }
       this.offset = null;
       this.currentItem = null;
     },
