@@ -20,6 +20,7 @@
     </defs>
     <!-- create Miro like app -->
     <Card
+      @dblclick="onDblClick($event, item)"
       @pointerdown="onPointerDown($event, item)"
       @pointerup="onPointerUp"
       @pointermove="onPointerMove"
@@ -31,20 +32,9 @@
 </template>
 
 <script lang="ts">
-interface Card {
-  text: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  color: string;
-  id: string;
-}
+import { Point, CardItem } from "../type";
+import Card from "./Card.vue";
 
-interface Point {
-  x: number;
-  y: number;
-}
 function screenToSvg(
   point: Point,
   el: SVGGraphicsElement,
@@ -56,55 +46,21 @@ function screenToSvg(
   return pt.matrixTransform(el?.getScreenCTM()?.inverse());
 }
 
-const fancyColors = [
-  "#FCD34D",
-  "#6EE7B7",
-  "#93C5FD",
-  "#A5B4FC",
-  "#C4B5FD",
-  "#F9A8D4",
-  "#FCA5A5",
-]
-
-import Card from "./Card.vue";
 export default {
-  name: "HelloWorld",
+  name: "Canvas",
+  props: {
+    items: {
+      type: Array,
+      default: () => [],
+    },
+  },
   data() {
     return {
       width: 500,
       height: 500,
       offset: null as Point | null,
-      items: [
-        {
-          text: "Card 1",
-          x: 0,
-          y: 0,
-          width: 300,
-          height: 300,
-          color: fancyColors[0],
-          id: "1",
-        },
-        {
-          text: "Card 2",
-          x: 100,
-          y: 200,
-          width: 300,
-          height: 300,
-          color: fancyColors[1],
-          id: "2",
-        },
-        {
-          text: "Card 3",
-          x: 200,
-          y: 300,
-          width: 300,
-          height: 300,
-          color: fancyColors[2],
-          id: "3",
-        },
 
-] as Card[],
-      currentItem: null as Card | null,
+      currentItem: null as CardItem | null,
       count: 0,
     };
   },
@@ -112,7 +68,7 @@ export default {
     Card,
   },
   methods: {
-    onPointerDown(ev: PointerEvent, item: Card) {
+    onPointerDown(ev: PointerEvent, item: CardItem) {
       const target = ev.target as SVGGraphicsElement;
       target.setPointerCapture(ev.pointerId);
       this.offset = screenToSvg(
@@ -141,10 +97,16 @@ export default {
       this.width = window.innerWidth;
       this.height = window.innerHeight;
     },
+    onDblClick(ev: PointerEvent, item: CardItem) {
+      this.$emit("edit", item);
+    },
   },
   mounted() {
     document.addEventListener("resize", this.onResize);
     this.onResize();
+  },
+  beforeUnmount() {
+    document.removeEventListener("resize", this.onResize);
   },
 };
 </script>
